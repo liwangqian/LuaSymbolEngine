@@ -1,0 +1,73 @@
+{
+    "name": "_G",
+    "symtbl": [
+        {
+            "name": "fileName",
+            "uri": "\\F:\\lua\\test.lua",
+            "symtbl": [
+                {
+                    "name": "abc",
+                    "kind": "any",
+                    "scope": {
+                        "start": {
+                            "line": 1,
+                            "character": 0
+                        },
+                        "end": {
+                            "line": 2,
+                            "character": 3
+                        }
+                    },
+                    "isLocal": true,
+                    "value": {
+                        "name": "xxx",
+                        "kind": "function",
+                        "scope": {
+                            "start": {
+                                "line": 1,
+                                "character": 2
+                            },
+                            "end": {
+                                "line": 2,
+                                "character": 3
+                            }
+                        },
+                        "isLocal": false,
+                        "params": [
+                            {
+                                "name": "x",
+                                "kind": "any"
+                            },
+                            {
+                                "name": "y",
+                                "kind": "any"
+                            }
+                        ],
+                        "symtble": [],
+                        "returns": [
+                            [
+                                {
+                                    "name": "anomous",
+                                    "kind": "number"
+                                },
+                                {
+                                    "name": "xxx",
+                                    "kind": "table",
+                                    "value": [
+                                        {},
+                                        {}
+                                    ]
+                                },
+                                {
+                                    "name": "func",
+                                    "kind": "function",
+                                    "params": []
+                                }
+                            ]
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

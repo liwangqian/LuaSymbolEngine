@@ -1,0 +1,297 @@
+{
+  "name": "test01",
+  "kind": 0,
+  "uri": "./test/textures/test01.lua",
+  "value": [
+    [
+      {
+        "name": "i",
+        "kind": 2,
+        "uri": "./test/textures/test01.lua",
+        "value": [
+          {
+            "name": "a",
+            "kind": 5,
+            "uri": "./test/textures/test01.lua",
+            "isLocal": false,
+            "location": {
+              "start": {
+                "line": 4,
+                "character": 4
+              },
+              "end": {
+                "line": 4,
+                "character": 5
+              }
+            },
+            "scope": {
+              "start": {
+                "line": 4,
+                "character": 4
+              },
+              "end": {
+                "line": 13,
+                "column": 8
+              }
+            }
+          },
+          {
+            "name": "b",
+            "kind": 4,
+            "uri": "./test/textures/test01.lua",
+            "isLocal": false,
+            "location": {
+              "start": {
+                "line": 5,
+                "character": 4
+              },
+              "end": {
+                "line": 5,
+                "character": 5
+              }
+            },
+            "scope": {
+              "start": {
+                "line": 5,
+                "character": 4
+              },
+              "end": {
+                "line": 13,
+                "column": 8
+              }
+            }
+          },
+          {
+            "name": "getA",
+            "kind": 3,
+            "uri": "./test/textures/test01.lua",
+            "value": [
+              []
+            ],
+            "isLocal": false,
+            "location": {
+              "start": {
+                "line": 8,
+                "character": 11
+              },
+              "end": {
+                "line": 8,
+                "character": 15
+              }
+            },
+            "scope": {
+              "start": {
+                "line": 8,
+                "character": 11
+              },
+              "end": {
+                "line": 13,
+                "column": 8
+              }
+            },
+            "symbols": [],
+            "params": []
+          }
+        ],
+        "isLocal": true,
+        "location": {
+          "start": {
+            "line": 3,
+            "character": 6
+          },
+          "end": {
+            "line": 3,
+            "character": 7
+          }
+        },
+        "scope": {
+          "start": {
+            "line": 3,
+            "character": 6
+          },
+          "end": {
+            "line": 13,
+            "column": 8
+          }
+        }
+      }
+    ]
+  ],
+  "isLocal": false,
+  "scope": {
+    "start": {
+      "line": 1,
+      "column": 0
+    },
+    "end": {
+      "line": 13,
+      "column": 8
+    }
+  },
+  "symbols": [
+    {
+      "name": "y",
+      "kind": 5,
+      "uri": "./test/textures/test01.lua",
+      "isLocal": true,
+      "location": {
+        "start": {
+          "line": 0,
+          "character": 6
+        },
+        "end": {
+          "line": 0,
+          "character": 7
+        }
+      },
+      "scope": {
+        "start": {
+          "line": 0,
+          "character": 6
+        },
+        "end": {
+          "line": 13,
+          "column": 8
+        }
+      }
+    },
+    {
+      "name": "x",
+      "kind": 4,
+      "uri": "./test/textures/test01.lua",
+      "isLocal": true,
+      "location": {
+        "start": {
+          "line": 1,
+          "character": 6
+        },
+        "end": {
+          "line": 1,
+          "character": 7
+        }
+      },
+      "scope": {
+        "start": {
+          "line": 1,
+          "character": 6
+        },
+        "end": {
+          "line": 13,
+          "column": 8
+        }
+      }
+    },
+    {
+      "name": "i",
+      "kind": 2,
+      "uri": "./test/textures/test01.lua",
+      "value": [
+        {
+          "name": "a",
+          "kind": 5,
+          "uri": "./test/textures/test01.lua",
+          "isLocal": false,
+          "location": {
+            "start": {
+              "line": 4,
+              "character": 4
+            },
+            "end": {
+              "line": 4,
+              "character": 5
+            }
+          },
+          "scope": {
+            "start": {
+              "line": 4,
+              "character": 4
+            },
+            "end": {
+              "line": 13,
+              "column": 8
+            }
+          }
+        },
+        {
+          "name": "b",
+          "kind": 4,
+          "uri": "./test/textures/test01.lua",
+          "isLocal": false,
+          "location": {
+            "start": {
+              "line": 5,
+              "character": 4
+            },
+            "end": {
+              "line": 5,
+              "character": 5
+            }
+          },
+          "scope": {
+            "start": {
+              "line": 5,
+              "character": 4
+            },
+            "end": {
+              "line": 13,
+              "column": 8
+            }
+          }
+        },
+        {
+          "name": "getA",
+          "kind": 3,
+          "uri": "./test/textures/test01.lua",
+          "value": [
+            []
+          ],
+          "isLocal": false,
+          "location": {
+            "start": {
+              "line": 8,
+              "character": 11
+            },
+            "end": {
+              "line": 8,
+              "character": 15
+            }
+          },
+          "scope": {
+            "start": {
+              "line": 8,
+              "character": 11
+            },
+            "end": {
+              "line": 13,
+              "column": 8
+            }
+          },
+          "symbols": [],
+          "params": []
+        }
+      ],
+      "isLocal": true,
+      "location": {
+        "start": {
+          "line": 3,
+          "character": 6
+        },
+        "end": {
+          "line": 3,
+          "character": 7
+        }
+      },
+      "scope": {
+        "start": {
+          "line": 3,
+          "character": 6
+        },
+        "end": {
+          "line": 13,
+          "column": 8
+        }
+      }
+    }
+  ],
+  "references": []
+}
