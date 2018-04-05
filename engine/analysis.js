@@ -25,6 +25,7 @@ function analysisFile(uri, content, options, logger) {
     let node = luaparse_1.parse(content.toString(), mergeOption(options));
     let walker = new walker_1.Walker(types_1.get({}), { allowDefined: true }, logger);
     walker.processDocument(node, uri);
+    logger(JSON.stringify(node, null, 2));
     return walker.root;
 }
 
