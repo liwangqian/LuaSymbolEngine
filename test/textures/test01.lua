@@ -18,4 +18,4 @@
 -- @module pl.data
 module('drv_base')
 
-local utils = require 'pl.utils'
+local x = 123

@@ -3,179 +3,222 @@
 const path = require('path')
 const fs = require('fs')
 const luaparse = require('luaparse');
-const { LuaTypes } = require('./lua-types');
-const { LuaScope, LuaSymbol, LuaFunction, LuaModule } = require('./lua-symbol');
-const { deduce, newType } = require('./type-deduce');
-const { getMetatable, setMetatable, searchField, safeName, baseName } = require('./utils_v2');
+const { LuaSymbol, LuaTable, LuaFunction, LuaModule, LuaScope, BasicTypes } = require('./typedef');
+const { typeOf } = require('./typeof');
+const { identName, baseName, safeName } = require('./utils_v2');
 
 // _G
-let global = new LuaTypes.table();
+let _G = new LuaSymbol(new LuaTable(null), '_G', false, null);
 
 /**
  * Analysis adapt to luaparse
 */
 function analysis(code, uri, name) {
-    let moduleType = new LuaTypes.module();
-    let typeList = global;
-    let luaModule = new LuaModule(moduleType, name, [0, code.length + 1], uri);
-    let scopeStack = [];
+    let moduleType = new LuaModule([0, code.length + 1], _G.type, uri);
+    let theModule = new LuaSymbol(moduleType, null, false, null);
     let lastScope = null;
-    let currentScope = [];
+    let currentScope = null;
 
-    const isPlaceHolder = (name) => {
+    function isPlaceHolder(name) {
         return name === '_';
     }
 
-    const isInitWithNil = (init) => {
+    function isInitWithNil(init) {
         return !init || init.name === 'nil';
     }
 
-    const parseDependence = (node, param) => {
+    function parseDependence(node, param) {
         if (param.type !== 'StringLiteral') {
             return;
         }
 
         let mname = param.value.match(/\w+$/)[0];
-        // let mnode = {
-        //     type: 'CallExpression',
-        //     name: mname,
-        //     shortPath: param.value.replace(/\./g, path.sep)
-        // }
-
-        let type = newType(global, node);
+        let type = typeOf(currentScope, node);
         let symbol = new LuaSymbol(type, mname, true, node.range, uri);
-        currentScope.push(symbol);
-        global.addField(type, mname);
+        currentScope.setField(mname, symbol);
+        moduleType.addDepend(mname, symbol);
     }
 
-    const onCreateNode = (node) => {
+    function parseLocalStatement(node) {
+        node.variables.forEach((variable, index) => {
+            let name = variable.name;
+            if (isPlaceHolder(name)) {
+                return;
+            }
+
+            let init = node.init[index];
+            if (isInitWithNil(init)) {
+                return;
+            }
+
+            let type = typeOf(currentScope, init, safeName(init));
+            let symbol = new LuaSymbol(type, name, true, variable.range);
+
+            currentScope.setField(name, symbol);
+
+            walkNode(init);
+        });
+    }
+
+    function parseAssignmentStatement(node) {
+        node.variables.forEach((variable, index) => {
+            let name = variable.name;
+            if (isPlaceHolder(name)) {
+                return;
+            }
+
+            let init = node.init[index];
+            if (isInitWithNil(init)) {
+                return;
+            }
+
+            let { table, value } = currentScope.searchField(name);
+            if (value) {
+                return;
+            }
+
+            let type = typeOf(currentScope, init, safeName(init));
+            let symbol = new LuaSymbol(type, name, true, variable.range);
+
+            currentScope.setField(name, symbol); //TODO: should define in _G ?
+
+            walkNode(init);
+        });
+    }
+
+    function parseTableConstructorExpression(node) {
+        let name = safeName(node);
+        let type = new LuaTable();
+        let symbol = new LuaSymbol(type, name, true, node.range);
+        currentScope.setField(name, symbol);
+        // walkNodes(node.fields);
+        node.fields.forEach((field, index) => {
+            if (field.type !== 'TableKeyString') {
+                return;
+            }
+            let n = field.key.name;
+            let t = typeOf(currentScope, field.value, safeName(field.value));
+            let s = new LuaSymbol(t, n, true, field.key.range);
+            type.setField(n, s);
+
+            walkNode(field.value);
+        });
+    }
+
+    function parseFunctionDeclaration(node) {
+        let name = identName(node.identifier);
+        let range = node.range;
+        if (name) {
+            range = node.identifier.range;
+        } else {
+            name = '@(' + range + ')';
+        }
+        let type = new LuaFunction(range, currentScope);
+        let func = new LuaSymbol(type, name, node.isLocal, range);
+        let bName = baseName(node.identifier);
+        if (bName) {
+            let { table, value } = currentScope.searchField(bName);
+            if (value && value instanceof LuaTable) {
+                value.setField(name, type);
+            } else {
+                //TODO: add definition as global?
+            }
+        } else {
+            currentScope.setField(name, type);
+        }
+
+        currentScope = type.scope;
+
+        node.parameters.forEach((param, index) => {
+            let name = param.name || param.value;
+            let symbol = new LuaSymbol(BasicTypes.unkown_t, name, true, param.range);
+            currentScope.setField(name, symbol);
+            type.args[index] = name;
+        });
+
+        walkNodes(node.body);
+        currentScope = currentScope.parentScope();
+    }
+
+    function parseCallExpression(node) {
+        let fname = identName(node.base);
+        if (fname === 'module') {
+            let mname = (node.argument || node.arguments[0]).value;
+            theModule.name = mname;
+            moduleType.moduleMode = true;
+        } else if (fname === 'require') {
+            let param = (node.argument || node.arguments[0]);
+            parseDependence(node, param);
+        } else if (fname === 'pcall' && node.arguments[0].value === 'require') {
+            parseDependence(node, node.arguments[1]);
+        }
+    }
+
+    function parseDoStatement() {
+        let scope = new LuaScope(node.body.range, currentScope);
+        currentScope = scope;
+        walkNodes(node.body);
+        currentScope = currentScope.parentScope;
+    }
+
+    function walkNodes(nodes) {
+        nodes.forEach(walkNode);
+    }
+
+    function walkNode(node) {
         switch (node.type) {
             case 'AssignmentStatement':
-                node.variables.forEach((variable, index) => {
-                    let name = variable.name;
-                    if (isPlaceHolder(name)) {
-                        return;
-                    }
-
-                    let init = node.init[index];
-                    if (isInitWithNil(init)) {
-                        return;
-                    }
-
-                    let { t, v } = searchField(typeList, name);
-                    t = t || typeList;
-                    let type = v || newType(typeList, init);
-                    let symbol = new LuaSymbol(type, name, false, node.range, uri);
-
-                    currentScope.push(symbol);
-                    t.addField(type, name);
-                });
-
+                parseAssignmentStatement(node);
                 break;
             case 'LocalStatement':
-                node.variables.forEach((variable, index) => {
-                    let name = variable.name;
-                    if (isPlaceHolder(name)) {
-                        return;
-                    }
-
-                    let init = node.init[index];
-                    if (isInitWithNil(init)) {
-                        return;
-                    }
-
-                    let type = newType(typeList, init);
-                    let symbol = new LuaSymbol(type, name, true, node.range, uri);
-
-                    currentScope.push(symbol);
-                    typeList.addField(type, name);
-                });
+                parseLocalStatement(node);
+                break;
+            case 'TableConstructorExpression':
+                parseTableConstructorExpression(node);
                 break;
             case 'FunctionDeclaration':
-                const type = newType(typeList, node);
-                const name = safeName(node.identifier);
-                const func = new LuaFunction(type, name, node.isLocal, node.range, node.range, uri);
-                func.scopeSymbols = lastScope;
-
-                const bName = baseName(node.identifier);
-                if (bName) {
-                    let { t, v } = searchField(typeList, bName);
-                    if (v) {
-                        v = deduce(t, v, bName);
-                        if (LuaTypes.isTable(v)) {
-                            v.addField(type, name);
-                        }
-                    } else {
-                        //TODO: add definition as global?
-                    }
-                } else {
-                    currentScope.push(func);
-                    typeList.fields[name] = type;
-                }
-
+                parseFunctionDeclaration(node);
                 break;
-            case 'Chunk':
-                luaModule.scopeSymbols = lastScope;
-                global.addField(luaModule, luaModule.name);
+            case 'CallStatement':
+                walkNode(node.expression);
             case 'CallExpression':  //in module mode(Lua_5.1)
             case 'StringCallExpression':
-                let fname = safeName(node.base);
-                if (fname === 'module') {
-                    let mname = (node.argument || node.arguments[0]).value;
-                    luaModule.name = mname;
-                    luaModule.moduleMode = true;
-                } else if (fname === 'require') {
-                    let param = (node.argument || node.arguments[0]);
-                    parseDependence(fname, param);
-                } else if (fname === 'pcall' && node.arguments[0].value === 'require') {
-                    parseDependence(fname, node.arguments[1]);
-                }
+                parseCallExpression(node);
+                break;
+            case 'DoStatement':
+                parseDoStatement(node);
+            case 'Chunk':
+                currentScope = moduleType.scope;
+                walkNodes(node.body);
+                break;
+
             default:
                 break;
         }
     };
 
-    const onCreateScope = () => {
-        scopeStack.push(currentScope);
-        lastScope = currentScope;
-        currentScope = [];
-
-        typeList = setMetatable(new LuaTypes.table(), { __index: typeList });
-    };
-
-    const onDestroyScope = () => {
-        lastScope = currentScope;
-        currentScope = scopeStack.pop();
-
-        let mt = getMetatable(typeList);
-        typeList = mt && mt.__index;
-    };
-
-    luaparse.parse(code.toString('utf8'), {
+    const node = luaparse.parse(code.toString('utf8'), {
         comments: false,
         scope: true,
-        locations: true,
-        ranges: true,
-        onCreateNode: onCreateNode,
-        onCreateScope: onCreateScope,
-        onDestroyScope: onDestroyScope,
+        ranges: true
     });
 
-    return luaModule;
+    walkNode(node);
+
+    if (theModule.name == null) {
+        theModule.name = theModule.type.fileName;
+    }
+    _G.type.setField(theModule.name, theModule);
+
+    return moduleType;
 }
 
 //tester
 fs.readFile('./test/textures/test01.lua', (err, data) => {
-    // let global = new LuaTypes.table();
     let mod = analysis(data, './test/textures/test01.lua');
-    console.log(global);
-    console.log(global.fields['drv_base']);
-    // console.log(deduce(global, mod.type.exports.fields));
-    // console.log(deduce(mod.type.exports, mod.type.exports.fields['x'], 'x'));
-    // console.log(deduce(mod.type.exports, mod.type.exports.fields['y'], 'y'));
-    // console.log(deduce(mod.type.exports.fields['x'], mod.type.exports.fields['x'].fields['abc']));
-    // console.log(mod.type);
-    // console.log(deduce(null, mod.scopeSymbols[0].type, mod.scopeSymbols[0].name));
+    console.log(_G);
+    console.log(_G.type.fields.get('drv_base'));
+    console.log(_G.type.fields.get('drv_base').type.scope.fields.get('x').type.typeOf());
 });
 
 
